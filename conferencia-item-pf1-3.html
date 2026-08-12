@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conferência de Item PF1</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --navy-950:#071b3d;
+    --navy-900:#0b2657;
+    --navy-800:#123471;
+    --navy-700:#1b4694;
+    --blue-accent:#3b82f6;
+    --bg:#eef1f6;
+    --card:#ffffff;
+    --line:#dbe2ee;
+    --text:#0e1a30;
+    --muted:#6b7994;
+    --ok:#0e9f6e;
+    --warn:#e0a300;
+    --danger:#e0483e;
+    --radius:16px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  body{
+    margin:0;
+    font-family:'Inter','Segoe UI',system-ui,sans-serif;
+    background:var(--bg);
+    color:var(--text);
+    padding-bottom:100px;
+  }
+  .wrap{ max-width:520px; margin:0 auto; padding:14px; }
+
+  .header{
+    background:linear-gradient(135deg,var(--navy-900),var(--navy-700));
+    border-radius:var(--radius);
+    padding:18px;
+    color:#fff;
+    margin-bottom:12px;
+  }
+  .header h1{ margin:0 0 2px; font-size:19px; font-weight:800; letter-spacing:-.2px; }
+  .header .sub{ font-size:12px; opacity:.75; font-weight:500; }
+  .header .count{
+    margin-top:10px;
+    display:flex;
+    gap:16px;
+  }
+  .header .count div{ font-size:11px; opacity:.75; }
+  .header .count b{ display:block; font-size:18px; font-weight:800; opacity:1; }
+
+  .card{
+    background:var(--card);
+    border-radius:14px;
+    border:1px solid var(--line);
+    padding:14px;
+    margin-bottom:12px;
+  }
+  .card h2{
+    font-size:13px;
+    font-weight:800;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+    color:var(--navy-800);
+    margin:0 0 12px;
+  }
+
+  .field{ margin-bottom:10px; }
+  .field label{
+    display:block;
+    font-size:11px;
+    font-weight:700;
+    color:var(--muted);
+    margin-bottom:4px;
+    text-transform:uppercase;
+    letter-spacing:.3px;
+  }
+  .field input, .field select{
+    width:100%;
+    padding:10px 11px;
+    border:1.5px solid var(--line);
+    border-radius:10px;
+    font-size:14px;
+    color:var(--text);
+    background:#fbfcfe;
+    font-family:inherit;
+  }
+  .field input:focus, .field select:focus{
+    outline:none;
+    border-color:var(--blue-accent);
+    background:#fff;
+  }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .row3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+
+  .status-picker{ display:flex; gap:6px; flex-wrap:wrap; }
+  .status-chip{
+    padding:8px 12px;
+    border-radius:20px;
+    border:1.5px solid var(--line);
+    font-size:12.5px;
+    font-weight:700;
+    color:var(--muted);
+    background:#fbfcfe;
+  }
+  .status-chip.active{
+    background:var(--navy-900);
+    border-color:var(--navy-900);
+    color:#fff;
+  }
+
+  .btn-add{
+    width:100%;
+    background:var(--navy-900);
+    color:#fff;
+    border:none;
+    border-radius:12px;
+    padding:13px;
+    font-size:14.5px;
+    font-weight:800;
+    margin-top:4px;
+  }
+  .btn-add:active{ opacity:.85; }
+
+  .list-toolbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:8px;
+  }
+  .list-toolbar h2{ margin:0; }
+  .export-btn{
+    background:var(--ok);
+    color:#fff;
+    border:none;
+    border-radius:10px;
+    padding:8px 12px;
+    font-size:11.5px;
+    font-weight:800;
+    display:flex;
+    align-items:center;
+    gap:5px;
+  }
+
+  .entry{
+    background:var(--card);
+    border-radius:12px;
+    border:1px solid var(--line);
+    padding:11px 12px;
+    margin-bottom:8px;
+    display:flex;
+    align-items:center;
+    gap:10px;
+  }
+  .entry-body{ flex:1; min-width:0; }
+  .entry-top{
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    font-size:13px;
+    font-weight:700;
+  }
+  .entry-item{ color:var(--text); }
+  .entry-quant{ color:var(--navy-700); white-space:nowrap; }
+  .entry-meta{
+    font-size:11px;
+    color:var(--muted);
+    margin-top:3px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .entry-status{
+    font-size:9.5px;
+    font-weight:800;
+    padding:3px 8px;
+    border-radius:6px;
+    text-transform:uppercase;
+    white-space:nowrap;
+    flex-shrink:0;
+  }
+  .status-ok{ background:#e5f7ef; color:var(--ok); }
+  .status-pend{ background:#fff6e0; color:var(--warn); }
+  .status-avaria{ background:#fdeceb; color:var(--danger); }
+  .status-none{ background:#eef1f6; color:var(--muted); }
+
+  .del-btn{
+    background:none;
+    border:none;
+    color:#c3cbdb;
+    font-size:18px;
+    padding:2px 4px;
+    flex-shrink:0;
+  }
+
+  .empty{
+    text-align:center;
+    color:var(--muted);
+    font-size:13px;
+    padding:30px 10px;
+  }
+
+  .toast{
+    position:fixed;
+    bottom:20px;
+    left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--navy-900);
+    color:#fff;
+    padding:11px 20px;
+    border-radius:30px;
+    font-size:13px;
+    font-weight:700;
+    opacity:0;
+    transition:all .25s ease;
+    pointer-events:none;
+    z-index:50;
+    white-space:nowrap;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+
+  .note{
+    font-size:11px;
+    color:var(--muted);
+    text-align:center;
+    line-height:1.5;
+    margin-top:6px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <h1>Conferência de Item PF1</h1>
+    <div class="sub" id="todayLabel">—</div>
+    <div class="count">
+      <div>Registros hoje<b id="countToday">0</b></div>
+      <div>Total salvo<b id="countTotal">0</b></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Novo registro</h2>
+
+    <div class="row2">
+      <div class="field">
+        <label>Data</label>
+        <input type="date" id="fData">
+      </div>
+      <div class="field">
+        <label>Plano</label>
+        <input type="text" id="fPlano" inputmode="numeric" placeholder="130422">
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>Cor/Doc</label>
+        <input type="text" id="fCorDoc" placeholder="15 a 20">
+      </div>
+      <div class="field">
+        <label>Setor</label>
+        <input type="text" id="fSetor" placeholder="VOI">
+      </div>
+    </div>
+
+    <div class="row2">
+      <div class="field">
+        <label>Modelo</label>
+        <input type="text" id="fModelo" inputmode="numeric" placeholder="33522">
+      </div>
+      <div class="field">
+        <label>Item</label>
+        <input type="text" id="fItem" inputmode="numeric" placeholder="231690">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Nome do Item</label>
+      <input type="text" id="fNomeItem" placeholder="Ex: Sapato tênis casual">
+    </div>
+
+    <div class="field">
+      <label>Quant.</label>
+      <input type="text" id="fQuant" inputmode="decimal" placeholder="3.229">
+    </div>
+
+    <div class="field">
+      <label>Status</label>
+      <div class="status-picker" id="statusPicker">
+        <div class="status-chip" data-v="">Nenhum</div>
+        <div class="status-chip" data-v="OK">OK</div>
+        <div class="status-chip" data-v="Pendente">Pendente</div>
+        <div class="status-chip" data-v="Avaria">Avaria</div>
+        <div class="status-chip" data-v="Agulhão">Agulhão</div>
+        <div class="status-chip" data-v="Pino">Pino</div>
+      </div>
+    </div>
+
+    <button class="btn-add" id="btnAdd">＋ Adicionar registro</button>
+  </div>
+
+  <div class="list-toolbar">
+    <h2 style="font-size:13px;font-weight:800;color:var(--navy-800);text-transform:uppercase;letter-spacing:.4px;">Registros</h2>
+    <button class="export-btn" id="btnExport">⬇ Exportar .xlsx</button>
+  </div>
+
+  <div id="entryList"></div>
+  <div class="note">Os dados ficam salvos neste app. Toque em "Exportar .xlsx" sempre que quiser gerar a planilha atualizada e salvar/compartilhar no celular.</div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'pf1-entries';
+let entries = [];
+let selectedStatus = '';
+
+const $ = (id) => document.getElementById(id);
+
+function todayISO(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+function toBR(iso){
+  if(!iso) return '';
+  const [y,m,d] = iso.split('-');
+  return `${d}/${m}/${y.slice(2)}`;
+}
+
+function statusClass(s){
+  if(s === 'OK') return 'status-ok';
+  if(s === 'Pendente') return 'status-pend';
+  if(s === 'Avaria') return 'status-avaria';
+  if(!s) return 'status-none';
+  return 'status-avaria';
+}
+
+function loadEntries(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    entries = raw ? JSON.parse(raw) : [];
+  }catch(e){
+    entries = [];
+  }
+  render();
+}
+
+function saveEntries(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  }catch(e){
+    showToast('Erro ao salvar. Tente novamente.');
+  }
+}
+
+function showToast(msg){
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=> t.classList.remove('show'), 1800);
+}
+
+function render(){
+  const today = todayISO();
+  $('countToday').textContent = entries.filter(e => e.data === today).length;
+  $('countTotal').textContent = entries.length;
+  $('todayLabel').textContent = new Date().toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long'});
+
+  const list = $('entryList');
+  if(entries.length === 0){
+    list.innerHTML = '<div class="empty">Nenhum registro ainda.<br>Preencha o formulário acima para começar.</div>';
+    return;
+  }
+
+  const sorted = [...entries].sort((a,b) => (b.criadoEm||0) - (a.criadoEm||0));
+  list.innerHTML = sorted.map(e => `
+    <div class="entry" data-id="${e.id}">
+      <div class="entry-body">
+        <div class="entry-top">
+          <span class="entry-item">Item ${escapeHtml(e.item||'—')}${e.nomeItem ? ' · ' + escapeHtml(e.nomeItem) : ''}</span>
+          <span class="entry-quant">${escapeHtml(e.quant||'—')}</span>
+        </div>
+        <div class="entry-meta">${toBR(e.data)} · Plano ${escapeHtml(e.plano||'—')} · Setor ${escapeHtml(e.setor||'—')} · Modelo ${escapeHtml(e.modelo||'—')}</div>
+      </div>
+      <span class="entry-status ${statusClass(e.status)}">${e.status || '—'}</span>
+      <button class="del-btn" data-del="${e.id}">✕</button>
+    </div>
+  `).join('');
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+$('statusPicker').addEventListener('click', (ev) => {
+  const chip = ev.target.closest('.status-chip');
+  if(!chip) return;
+  document.querySelectorAll('.status-chip').forEach(c => c.classList.remove('active'));
+  chip.classList.add('active');
+  selectedStatus = chip.dataset.v;
+});
+
+// default: select "Nenhum"
+document.querySelector('.status-chip[data-v=""]').classList.add('active');
+
+$('fData').value = todayISO();
+
+$('btnAdd').addEventListener('click', async () => {
+  const entry = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    criadoEm: Date.now(),
+    data: $('fData').value || todayISO(),
+    plano: $('fPlano').value.trim(),
+    corDoc: $('fCorDoc').value.trim(),
+    setor: $('fSetor').value.trim(),
+    modelo: $('fModelo').value.trim(),
+    item: $('fItem').value.trim(),
+    nomeItem: $('fNomeItem').value.trim(),
+    quant: $('fQuant').value.trim(),
+    status: selectedStatus
+  };
+
+  if(!entry.item && !entry.plano){
+    showToast('Preencha ao menos Plano ou Item');
+    return;
+  }
+
+  entries.push(entry);
+  saveEntries();
+
+  // reset form but keep date
+  ['fPlano','fCorDoc','fSetor','fModelo','fItem','fNomeItem','fQuant'].forEach(id => $(id).value = '');
+  document.querySelectorAll('.status-chip').forEach(c => c.classList.remove('active'));
+  document.querySelector('.status-chip[data-v=""]').classList.add('active');
+  selectedStatus = '';
+
+  render();
+  showToast('Registro adicionado');
+});
+
+$('entryList').addEventListener('click', async (ev) => {
+  const delId = ev.target.dataset && ev.target.dataset.del;
+  if(!delId) return;
+  entries = entries.filter(e => e.id !== delId);
+  saveEntries();
+  render();
+  showToast('Registro removido');
+});
+
+$('btnExport').addEventListener('click', () => {
+  if(entries.length === 0){
+    showToast('Nada para exportar ainda');
+    return;
+  }
+  const sorted = [...entries].sort((a,b) => (a.criadoEm||0) - (b.criadoEm||0));
+  const rows = sorted.map(e => ({
+    'DATA': toBR(e.data),
+    'PLANO': e.plano,
+    'COR/DOC': e.corDoc,
+    'SETOR': e.setor,
+    'MODELO': e.modelo,
+    'ITEM': e.item,
+    'NOME DO ITEM': e.nomeItem,
+    'QUANT': e.quant,
+    'STATUS': e.status
+  }));
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws['!cols'] = [{wch:10},{wch:10},{wch:10},{wch:8},{wch:10},{wch:10},{wch:22},{wch:10},{wch:12}];
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Conferencia PF1');
+  const filename = `conferencia_item_pf1_${todayISO()}.xlsx`;
+  XLSX.writeFile(wb, filename);
+  showToast('Planilha exportada');
+});
+
+loadEntries();
+</script>
+</body>
+</html>
